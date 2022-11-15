@@ -21,6 +21,8 @@ from keras.applications.inception_v3 import InceptionV3, preprocess_input
 from keras.models import Model, load_model
 from keras.preprocessing.image import load_img, img_to_array
 
+from tqdm import tqdm
+
 seed = 111
 np.random.seed(seed)
 tf.random.set_seed(seed)
@@ -90,16 +92,28 @@ def extractFinalLayer(IMAGES_FOLDER, img_name, model):
     x = np.reshape(x, x.shape[1])
     return x
 
+
+#%%
 # Create an instance of the Inception V3 network
 model_inceptionv3 = InceptionV3(weights='imagenet')
 model_inceptionv3 = Model(model_inceptionv3.input, model_inceptionv3.layers[-2].output) 
 finalLayer = extractFinalLayer(IMAGES_FOLDER,  train_imgs[0], model_inceptionv3)
-print(finalLayer.shape())
+print(finalLayer.shape)
+
+#%%
+
+dict_image_eigen_vector = {}
+def featureExtractions(images):
+    for image in tqdm(images):
+        image_eigen_vectors = extractFinalLayer(IMAGES_FOLDER, image, model_inceptionv3)
+        dict_image_eigen_vector[image] = image_eigen_vectors
 
 
 #%%
-# img = load_img(os.path.join(IMAGES_FOLDER, train_imgs[0]))
-# plt.imshow(img)
+
+featureExtractions(train_imgs)
+
+
 
 
 #%% Read and store the image captions into a dictionary
