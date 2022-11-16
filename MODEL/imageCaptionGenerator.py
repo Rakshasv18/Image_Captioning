@@ -2,7 +2,7 @@
 """
 Created on Tue Nov  1 16:22:24 2022
 
-@author: Meeshawn
+@author: Meeshawn Nithesh Raksha
 """
 
 #%%  Import necessary packages
@@ -34,7 +34,8 @@ IMAGES_PATH = '\dataset\Flickr8k_Dataset\Flicker8k_Dataset'
 IMAGES_FOLDER = os.getcwd() + IMAGES_PATH
 
 # Path to image captions
-CAPTIONS_PATH = './dataset/Flickr8k_text/Flickr8k.token.txt'
+CAPTIONS_PATH = '\dataset\Flickr8k_text'
+CAPTIONS_FOLDER = os.getcwd() + CAPTIONS_PATH
 
 # Desired image dimensions
 IMAGE_SIZE = (299, 299)
@@ -54,7 +55,7 @@ FF_DIM = 512
 # Other training parameters
 BATCH_SIZE = 64
 EPOCHS = 30
-AUTOTUNE = tf.data.AUTOTUNE
+AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 #%% Reading and storing the image filenames
 
@@ -66,13 +67,13 @@ def extractName(filename):
     return text    
     
 #%%
-train_imgs = extractName('./dataset/Flickr8k_text/Flickr_8k.trainImages.txt')
+train_imgs = extractName(CAPTIONS_FOLDER + 'Flickr_8k.trainImages.txt')
 train_imgs = [x for x in train_imgs if x != '']
 
-test_imgs = extractName('./dataset/Flickr8k_text/Flickr_8k.testImages.txt')
+test_imgs = extractName(CAPTIONS_FOLDER + 'Flickr_8k.testImages.txt')
 test_imgs = [x for x in test_imgs if x != '']
 
-dev_imgs = extractName('./dataset/Flickr8k_text/Flickr_8k.devImages.txt')
+dev_imgs = extractName(CAPTIONS_FOLDER + 'Flickr_8k.devImages.txt')
 dev_imgs = [x for x in dev_imgs if x != '']
 
 #%% Loading images and extracting final layer features/weights
@@ -169,6 +170,26 @@ with open('VocabList.txt', 'w') as f:
     for word in vocabulary:
         f.write(word)
         f.write('\n')
+f.close()
+        
+#%% Creating Word embeddings for all the words in the vocabulary:
+    
+word_embeddings_matrix = {}
+word_embeddings = {}
+
+with open('\dataset\glove.6B') as f:
+    for line in f:
+        sentence = line.strip()
+        sentence = sentence.split()
+        word = sentence[0]
+        feature_vector = sentence[1:]
+        word_embeddings[word] = feature_vector
+
+f.close()
+        
+for word in vocabulary:
+    word_embeddings_matrix[word] = word_embeddings[word]
+        
 
 
 
