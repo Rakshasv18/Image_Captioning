@@ -10,6 +10,7 @@ import numpy as np
 import string
 import matplotlib.pyplot as plt
 import os
+import pickle
 
 import tensorflow as tf
 from tensorflow import keras
@@ -67,13 +68,13 @@ def extractName(filename):
     return text    
     
 #%%
-train_imgs = extractName(CAPTIONS_FOLDER + 'Flickr_8k.trainImages.txt')
+train_imgs = extractName('./dataset/Flickr8k_text/Flickr_8k.trainImages.txt')
 train_imgs = [x for x in train_imgs if x != '']
 
-test_imgs = extractName(CAPTIONS_FOLDER + 'Flickr_8k.testImages.txt')
+test_imgs = extractName('./dataset/Flickr8k_text/Flickr_8k.testImages.txt')
 test_imgs = [x for x in test_imgs if x != '']
 
-dev_imgs = extractName(CAPTIONS_FOLDER + 'Flickr_8k.devImages.txt')
+dev_imgs = extractName('./dataset/Flickr8k_text/Flickr_8k.devImages.txt')
 dev_imgs = [x for x in dev_imgs if x != '']
 
 #%% Loading images and extracting final layer features/weights
@@ -99,7 +100,7 @@ def extractFinalLayer(IMAGES_FOLDER, img_name, model):
 model_inceptionv3 = InceptionV3(weights='imagenet')
 model_inceptionv3 = Model(model_inceptionv3.input, model_inceptionv3.layers[-2].output) 
 finalLayer = extractFinalLayer(IMAGES_FOLDER,  train_imgs[0], model_inceptionv3)
-print(finalLayer.shape)
+# print(finalLayer.shape)
 
 #%%
 
@@ -110,16 +111,26 @@ def featureExtractions(images):
         dict_image_eigen_vector[image] = image_eigen_vectors
 
 
-#%%
+#%% DO NOT RUN THIS!!!!!!!!
 
 featureExtractions(train_imgs)
 
+#%% Saving the 2048 length image feature vector to a pickle file
+
+with open('gil_strang.pkl', 'wb') as f:
+    pickle.dump(dict_image_eigen_vector, f)
+f.close()
+
+#%%
+with open('gil_strang.pkl', 'rb') as f:
+    gil_strang = pickle.load(f)
+f.close()
 
 
 
 #%% Read and store the image captions into a dictionary
 
-file = open(CAPTIONS_PATH, 'r')
+file = open('./dataset/Flickr8k_text/Flickr8k.token.txt', 'r')
 print('Reading and storing the image filenames and the corresponding captions\n' )
 
 dict_descriptions = {}
@@ -177,17 +188,18 @@ f.close()
 word_embeddings_matrix = {}
 word_embeddings = {}
 
-with open('\dataset\glove.6B') as f:
-    for line in f:
+with open('./dataset/glove.6B/glove.6B.200d.txt', 'rb') as f:
+    for line in tqdm(f):
         sentence = line.strip()
         sentence = sentence.split()
         word = sentence[0]
         feature_vector = sentence[1:]
         word_embeddings[word] = feature_vector
-
 f.close()
+
+#%%
         
-for word in vocabulary:
+for word in tqdm(vocabulary):
     word_embeddings_matrix[word] = word_embeddings[word]
         
 
