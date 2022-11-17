@@ -144,7 +144,7 @@ for line in file:
     if dict_descriptions.get(img_file_name) == None:
         dict_descriptions[img_file_name] = []
      
-    caption = 'BOS' + ' ' + caption + ' ' + 'EOS'
+    caption = 'startseq' + ' ' + caption + ' ' + 'endseq'
     dict_descriptions[img_file_name].append(caption)
     
 file.close()
@@ -166,7 +166,7 @@ for key, captions in dict_descriptions.items():
     for caption in captions:
         for word in caption.split(' '):
             vocabulary[word] = vocabulary.get(word, 0) + 1
-            
+
 #%%
 # word_count_thresh = 10
 # reduced_vocabulary = []
@@ -176,32 +176,52 @@ for key, captions in dict_descriptions.items():
 #         print(word)
 #         reduced_vocabulary.append(word)
         
-#%% Writing the vocab list
-with open('VocabList.txt', 'w') as f:
-    for word in vocabulary:
-        f.write(word)
-        f.write('\n')
-f.close()
+# #%% Writing the vocab list
+# with open('VocabList.txt', 'w') as f:
+#     for word in vocabulary:
+#         f.write(word)
+#         f.write('\n')
+# f.close()
+
+#%%
+wrd2idx = {}
+idx2wrd = {}
+idx = 1
+for word in vocabulary:
+    wrd2idx[word] = idx
+    idx2wrd[idx] = word
+    idx += 1
         
 #%% Creating Word embeddings for all the words in the vocabulary:
     
-word_embeddings_matrix = {}
-word_embeddings = {}
-
-with open('./dataset/glove.6B/glove.6B.200d.txt', 'rb') as f:
+glove_embeddings = {}
+with open('./dataset/glove.6B/glove.6B.200d.txt', 'r', encoding='utf-8') as f:
     for line in tqdm(f):
         sentence = line.strip()
         sentence = sentence.split()
         word = sentence[0]
         feature_vector = sentence[1:]
-        word_embeddings[word] = feature_vector
+        # print(word)
+        glove_embeddings[word] = np.asarray(feature_vector, dtype='float32')
+f.close()
+#%% Word embeddings for all the unique words in the captions/vocabulary
+dim_glove_vector = 200
+count = 0
+vocab_embeddings = np.zeros((len(vocabulary)+1, dim_glove_vector))
+for word in tqdm(vocabulary):
+    if word in glove_embeddings:
+        vocab_embeddings[wrd2idx[word]] = glove_embeddings[word]
+    else:
+        count = count+1
+#%%      
+with open('LSTM_vocab_embeddings.pkl', 'wb') as f:
+    pickle.dump(vocab_embeddings, f)
 f.close()
 
 #%%
-        
-for word in tqdm(vocabulary):
-    word_embeddings_matrix[word] = word_embeddings[word]
-        
+with open('LSTM_vocab_embeddings.pkl', 'rb') as f:
+    vocab_embeddings = pickle.load(f)
+f.close()
 
 
 
