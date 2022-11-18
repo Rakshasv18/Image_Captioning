@@ -148,17 +148,19 @@ for line in file:
     dict_descriptions[img_file_name].append(caption)
     
 file.close()
-#%% Cleaning the dictionary:
+#%% Pre-processing/cleaning the captions:
 maxLength = 0
+print('Pre-processing and cleaning the captions')
 for file, captions in dict_descriptions.items():
     for idx in range(len(captions)):       
         captions[idx] = captions[idx].lower()
         captions[idx] = captions[idx].translate(str.maketrans('', '', string.punctuation))
         captions[idx] = [word for word in captions[idx].split(' ') if len(word)>1]
         captions[idx] = [word for word in captions[idx] if word.isalpha()]
-        captions[idx] = ' '.join(captions[idx])                
-        if len(captions[idx].split(' ')) > maxLength:
-                maxLength = len(captions[idx].split(' '))
+        captions[idx] = ' '.join(captions[idx])
+        currLen = len(captions[idx].split(' '))                
+        if currLen > maxLength:
+                maxLength = currLen
 
 #%% Create a dictionary of unique words:
 vocabulary = {}
