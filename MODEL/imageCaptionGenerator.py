@@ -20,7 +20,10 @@ from tensorflow.keras.applications import efficientnet
 
 from keras.applications.inception_v3 import InceptionV3, preprocess_input
 from keras.models import Model, load_model
+from keras.layers import Input, Dropout, Dense, LSTM, Embedding, Add
 from keras.preprocessing.image import load_img, img_to_array
+from keras.preprocessing.sequence import pad_sequences
+from keras.utils import to_categorical
 
 from tqdm import tqdm
 
@@ -224,6 +227,76 @@ f.close()
 with open('LSTM_vocab_embeddings.pkl', 'rb') as f:
     vocab_embeddings = pickle.load(f)
 f.close()
+
+#%%
+def data_prep(dict_descriptions, dict_image_eigen_vector, maxLength, num_batch_size):
+    X1 = [] # Image input feature/eigen vector
+    X2 = [] # Input sequence
+    Y = [] # Target word/output seq
+    # Looping through every image
+    n = 0
+    while True:
+        for file_name, feature_vector in dict_image_eigen_vector.items():
+            n += 1
+            print(file_name)
+            captions = dict_descriptions[file_name.split('.')[0]]
+            for caption in captions:
+                seq = [wrd2idx[word] for word in caption.split()]
+                # Creating input-output datapoints
+                for idx in range(1, len(seq)):
+                    partial_caption = seq[:idx]    
+                    target_word = seq[idx]
+                    partial_caption = pad_sequences([partial_caption], maxlen=maxLength)[0]
+                    target_word = to_categorical([target_word], num_classes=len(vocabulary))[0]
+                    X1.append(feature_vector) 
+                    X2.append(partial_caption)
+                    Y.append(target_word)
+                    
+            if n==num_batch_size:
+                n=0
+                yield [[np.array(X1),np.array(X2)],np.array(Y)]
+                X1, X2, Y  = list(), list(), list()
+                
+#%%                
+final_generator = data_prep(dict_descriptions,dict_image_eigen_vector,maxLength,num_batch_size=5)
+
+inputs, outputs = next(final_generator)
+
+print(inputs[0].shape)
+print(inputs[1].shape)
+print(outputs.shape)
+
+#%%
+# image feature extractor model
+inputs1 = Input(shape=(2048,))
+fe1 = Dropout(0.5)(inputs1)
+fe2 = Dense(256, activation='relu')(fe1)
+# partial caption sequence model
+inputs2 = Input(shape=(maxLength,))
+se1 = Embedding(len(vocabulary), dim_glove_vector, mask_zero=True)(inputs2)
+se2 = Dropout(0.5)(se1)
+se3 = LSTM(256)(se2)
+# decoder (feed forward) model
+decoder1 = Add()([fe2, se3])
+decoder2 = Dense(256, activation='relu')(decoder1)
+outputs = Dense(len(vocabulary), activation='softmax')(decoder2)
+# merge the two input models
+model = Model(inputs=[inputs1, inputs2], outputs=outputs)
+# use pre-fixed weights for embeddding layer and not trainable.
+model.layers[2].set_weights([vocab_embeddings])
+model.layers[2].trainable = False
+# model compile
+model.compile(loss='categorical_crossentropy', optimizer='adam')
+
+
+
+                            
+                
+
+                
+        
+        
+    
 
 
 
